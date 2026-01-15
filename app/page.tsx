@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Transaction, Summary } from '@/types';
+import { Transaction, Summary, GameSettlementRecord, SettlementBillConfig } from '@/types';
 import {
   getTransactions,
   saveTransaction,
@@ -36,6 +36,17 @@ import AdvancedStats from '@/components/AdvancedStats';
 import Toast from '@/components/Toast';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import VersionInfo from '@/components/VersionInfo';
+import SettlementForm from '@/components/SettlementForm';
+import SettlementList from '@/components/SettlementList';
+import SettlementBill from '@/components/SettlementBill';
+import {
+  getSettlementRecords,
+  saveSettlementRecord,
+  deleteSettlementRecord,
+  clearSettlementRecords,
+  getSettlementConfig,
+  saveSettlementConfig,
+} from '@/lib/settlementStorage';
 
 export default function Home() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -51,7 +62,12 @@ export default function Home() {
   const [filterType, setFilterType] = useState<'all' | 'income' | 'expense'>('all');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
-  const [activeTab, setActiveTab] = useState<'list' | 'stats' | 'monthly' | 'yearly' | 'advanced'>('list');
+  const [activeTab, setActiveTab] = useState<'list' | 'stats' | 'monthly' | 'yearly' | 'advanced' | 'settlement'>('list');
+  const [settlementRecords, setSettlementRecords] = useState<GameSettlementRecord[]>([]);
+  const [showSettlementForm, setShowSettlementForm] = useState(false);
+  const [editingSettlement, setEditingSettlement] = useState<GameSettlementRecord | null>(null);
+  const [showSettlementBill, setShowSettlementBill] = useState(false);
+  const [settlementConfig, setSettlementConfig] = useState<SettlementBillConfig>(getSettlementConfig());
   const [categoryType, setCategoryType] = useState<'all' | 'income' | 'expense'>('all');
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState<'date' | 'amount' | 'category'>('date');
@@ -72,6 +88,7 @@ export default function Home() {
 
   useEffect(() => {
     loadTransactions();
+    loadSettlementRecords();
   }, []);
 
   useEffect(() => {
@@ -273,6 +290,39 @@ export default function Home() {
 
   const categoryData = calculateCategorySummary(filteredTransactions.length > 0 ? filteredTransactions : transactions);
   const monthlyData = calculateMonthlySummary(filteredTransactions.length > 0 ? filteredTransactions : transactions);
+
+  const loadSettlementRecords = () => {
+    const data = getSettlementRecords();
+    setSettlementRecords(data);
+  };
+
+  const handleSettlementSubmit = (record: GameSettlementRecord) => {
+    saveSettlementRecord(record);
+    loadSettlementRecords();
+    setShowSettlementForm(false);
+    setEditingSettlement(null);
+    showToast(editingSettlement ? '结算记录更新成功' : '结算记录添加成功', 'success');
+  };
+
+  const handleSettlementEdit = (record: GameSettlementRecord) => {
+    setEditingSettlement(record);
+    setShowSettlementForm(true);
+  };
+
+  const handleSettlementDelete = (id: string) => {
+    setConfirmDialog({
+      isOpen: true,
+      title: '确认删除',
+      message: '确定要删除这条结算记录吗？',
+      type: 'danger',
+      onConfirm: () => {
+        deleteSettlementRecord(id);
+        loadSettlementRecords();
+        setConfirmDialog({ ...confirmDialog, isOpen: false });
+        showToast('删除成功', 'success');
+      },
+    });
+  };
 
   const incomeCount = transactions.filter(t => t.type === 'income').length;
   const expenseCount = transactions.filter(t => t.type === 'expense').length;
@@ -503,6 +553,77 @@ export default function Home() {
 
         {activeTab === 'advanced' && (
           <AdvancedStats transactions={filteredTransactions.length > 0 ? filteredTransactions : transactions} />
+        )}
+
+        {activeTab === 'settlement' && (
+          <div className="space-y-6">
+            {showSettlementBill ? (
+              <div>
+                <div className="mb-4 flex justify-between items-center no-print">
+                  <button
+                    onClick={() => setShowSettlementBill(false)}
+                    className="bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-lg transition-all"
+                  >
+                    返回列表
+                  </button>
+                  <button
+                    onClick={() => window.print()}
+                    className="bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-lg transition-all"
+                  >
+                    打印对账单
+                  </button>
+                </div>
+                <SettlementBill records={settlementRecords} config={settlementConfig} />
+              </div>
+            ) : (
+              <>
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-xl font-bold text-gray-900 dark:text-white">结算对账管理</h3>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => {
+                        const period = startDate && endDate 
+                          ? `${startDate} - ${endDate}`
+                          : new Date().toLocaleDateString('zh-CN');
+                        saveSettlementConfig({ period });
+                        setShowSettlementBill(true);
+                      }}
+                      className="bg-green-500 hover:bg-green-600 text-white font-medium py-2 px-4 rounded-lg transition-all shadow-md hover:shadow-lg"
+                      disabled={settlementRecords.length === 0}
+                    >
+                      查看对账单
+                    </button>
+                    <button
+                      onClick={() => {
+                        setEditingSettlement(null);
+                        setShowSettlementForm(true);
+                      }}
+                      className="bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-lg transition-all shadow-md hover:shadow-lg"
+                    >
+                      + 新增结算记录
+                    </button>
+                  </div>
+                </div>
+
+                {showSettlementForm && (
+                  <SettlementForm
+                    onSubmit={handleSettlementSubmit}
+                    onCancel={() => {
+                      setShowSettlementForm(false);
+                      setEditingSettlement(null);
+                    }}
+                    initialData={editingSettlement || undefined}
+                  />
+                )}
+
+                <SettlementList
+                  records={settlementRecords}
+                  onEdit={handleSettlementEdit}
+                  onDelete={handleSettlementDelete}
+                />
+              </>
+            )}
+          </div>
         )}
           </div>
 
