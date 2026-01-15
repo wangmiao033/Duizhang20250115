@@ -475,6 +475,39 @@ export default function Home() {
   const incomeCount = transactions.filter(t => t.type === 'income').length;
   const expenseCount = transactions.filter(t => t.type === 'expense').length;
 
+  // 快捷键支持 - 必须在所有函数定义之后
+  useKeyboardShortcuts({
+    'ctrl+n': () => {
+      if (activeTab === 'settlement' && !showSettlementForm) {
+        setEditingSettlement(null);
+        setShowSettlementForm(true);
+      }
+    },
+    'ctrl+e': () => {
+      if (activeTab === 'settlement' && settlementRecords.length > 0) {
+        handleExportSettlementExcel();
+      }
+    },
+    'ctrl+p': () => {
+      if (activeTab === 'settlement' && showSettlementBill) {
+        window.print();
+      }
+    },
+    'escape': () => {
+      if (showSettlementForm) {
+        setShowSettlementForm(false);
+        setEditingSettlement(null);
+      }
+      if (showSettlementConfig) {
+        setShowSettlementConfig(false);
+      }
+      if (showBatchEdit) {
+        setShowBatchEdit(false);
+        setSelectedSettlementIds([]);
+      }
+    },
+  });
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
       {/* 顶部导航栏 */}
