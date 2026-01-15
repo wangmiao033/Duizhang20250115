@@ -94,7 +94,7 @@ export default function SettlementForm({ onSubmit, onCancel, initialData }: Sett
 
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            计费周期
+            计费周期 <span className="text-red-500">*</span>
           </label>
           <input
             type="text"
@@ -104,25 +104,26 @@ export default function SettlementForm({ onSubmit, onCancel, initialData }: Sett
             placeholder="如：2025年12月"
             required
           />
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">格式：YYYY年MM月，如：2025年12月</p>
         </div>
 
         <div className="md:col-span-2">
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            游戏名称
+            游戏名称 <span className="text-red-500">*</span>
           </label>
           <input
             type="text"
             value={formData.gameName}
             onChange={(e) => setFormData({ ...formData, gameName: e.target.value })}
             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-            placeholder="请输入游戏名称"
+            placeholder="请输入游戏完整名称，如：一起来修仙 (0.05折)"
             required
           />
         </div>
 
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            流水（元）
+            流水（元） <span className="text-red-500">*</span>
           </label>
           <input
             type="number"
@@ -130,13 +131,14 @@ export default function SettlementForm({ onSubmit, onCancel, initialData }: Sett
             value={formData.flow || ''}
             onChange={(e) => setFormData({ ...formData, flow: parseFloat(e.target.value) || 0 })}
             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+            placeholder="游戏总流水金额"
             required
           />
         </div>
 
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            充值金额（元）
+            充值金额（元） <span className="text-red-500">*</span>
           </label>
           <input
             type="number"
@@ -144,6 +146,7 @@ export default function SettlementForm({ onSubmit, onCancel, initialData }: Sett
             value={formData.rechargeAmount || ''}
             onChange={(e) => setFormData({ ...formData, rechargeAmount: parseFloat(e.target.value) || 0 })}
             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+            placeholder="实际充值到账金额"
             required
           />
         </div>
@@ -215,7 +218,7 @@ export default function SettlementForm({ onSubmit, onCancel, initialData }: Sett
 
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            结算比例（%）
+            结算比例（%） <span className="text-red-500">*</span>
           </label>
           <input
             type="number"
@@ -223,8 +226,10 @@ export default function SettlementForm({ onSubmit, onCancel, initialData }: Sett
             value={formData.settlementRatio || ''}
             onChange={(e) => setFormData({ ...formData, settlementRatio: parseFloat(e.target.value) || 0 })}
             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+            placeholder="通常为25"
             required
           />
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">根据合同约定，通常为25%</p>
         </div>
 
         {/* 自动计算字段 */}

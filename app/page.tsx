@@ -39,6 +39,8 @@ import VersionInfo from '@/components/VersionInfo';
 import SettlementForm from '@/components/SettlementForm';
 import SettlementList from '@/components/SettlementList';
 import SettlementBill from '@/components/SettlementBill';
+import SettlementGuide from '@/components/SettlementGuide';
+import SettlementBatchImport from '@/components/SettlementBatchImport';
 import {
   getSettlementRecords,
   saveSettlementRecord,
@@ -67,6 +69,7 @@ export default function Home() {
   const [showSettlementForm, setShowSettlementForm] = useState(false);
   const [editingSettlement, setEditingSettlement] = useState<GameSettlementRecord | null>(null);
   const [showSettlementBill, setShowSettlementBill] = useState(false);
+  const [showSettlementGuide, setShowSettlementGuide] = useState(true);
   const [settlementConfig, setSettlementConfig] = useState<SettlementBillConfig>(getSettlementConfig());
   const [categoryType, setCategoryType] = useState<'all' | 'income' | 'expense'>('all');
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -302,6 +305,14 @@ export default function Home() {
     setShowSettlementForm(false);
     setEditingSettlement(null);
     showToast(editingSettlement ? '结算记录更新成功' : '结算记录添加成功', 'success');
+  };
+
+  const handleSettlementBatchImport = (records: GameSettlementRecord[]) => {
+    records.forEach(record => {
+      saveSettlementRecord(record);
+    });
+    loadSettlementRecords();
+    showToast(`成功导入 ${records.length} 条结算记录`, 'success');
   };
 
   const handleSettlementEdit = (record: GameSettlementRecord) => {
@@ -577,21 +588,45 @@ export default function Home() {
               </div>
             ) : (
               <>
+                {/* 使用指南 */}
+                {showSettlementGuide && (
+                  <SettlementGuide onClose={() => setShowSettlementGuide(false)} />
+                )}
+
                 <div className="flex justify-between items-center mb-4">
                   <h3 className="text-xl font-bold text-gray-900 dark:text-white">结算对账管理</h3>
                   <div className="flex gap-3">
+                    {!showSettlementGuide && (
+                      <button
+                        onClick={() => setShowSettlementGuide(true)}
+                        className="bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-lg transition-all shadow-md hover:shadow-lg text-sm"
+                      >
+                        📖 使用指南
+                      </button>
+                    )}
                     <button
                       onClick={() => {
-                        const period = startDate && endDate 
-                          ? `${startDate} - ${endDate}`
-                          : new Date().toLocaleDateString('zh-CN');
+                        // 格式化日期显示
+                        let period = '';
+                        if (startDate && endDate) {
+                          const start = new Date(startDate);
+                          const end = new Date(endDate);
+                          const startStr = `${start.getFullYear()}年${String(start.getMonth() + 1).padStart(2, '0')}月${String(start.getDate()).padStart(2, '0')}日`;
+                          const endStr = `${end.getFullYear()}年${String(end.getMonth() + 1).padStart(2, '0')}月${String(end.getDate()).padStart(2, '0')}日`;
+                          period = `${startStr}-${endStr}`;
+                        } else {
+                          const now = new Date();
+                          const year = now.getFullYear();
+                          const month = String(now.getMonth() + 1).padStart(2, '0');
+                          period = `${year}年${month}月01日-${year}年${month}月${new Date(year, now.getMonth() + 1, 0).getDate()}日`;
+                        }
                         saveSettlementConfig({ period });
                         setShowSettlementBill(true);
                       }}
                       className="bg-green-500 hover:bg-green-600 text-white font-medium py-2 px-4 rounded-lg transition-all shadow-md hover:shadow-lg"
                       disabled={settlementRecords.length === 0}
                     >
-                      查看对账单
+                      📄 生成对账单
                     </button>
                     <button
                       onClick={() => {
@@ -605,6 +640,9 @@ export default function Home() {
                   </div>
                 </div>
 
+                {/* 批量导入 */}
+                <SettlementBatchImport onImport={handleSettlementBatchImport} />
+
                 {showSettlementForm && (
                   <SettlementForm
                     onSubmit={handleSettlementSubmit}
@@ -616,11 +654,34 @@ export default function Home() {
                   />
                 )}
 
-                <SettlementList
-                  records={settlementRecords}
-                  onEdit={handleSettlementEdit}
-                  onDelete={handleSettlementDelete}
-                />
+                {settlementRecords.length > 0 ? (
+                  <SettlementList
+                    records={settlementRecords}
+                    onEdit={handleSettlementEdit}
+                    onDelete={handleSettlementDelete}
+                  />
+                ) : (
+                  <div className="bg-white dark:bg-gray-800 p-12 rounded-2xl shadow-lg text-center border border-gray-200 dark:border-gray-700">
+                    <svg className="w-16 h-16 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    <p className="text-gray-500 dark:text-gray-400 text-lg mb-2">还没有结算记录</p>
+                    <p className="text-gray-400 dark:text-gray-500 text-sm mb-4">
+                      点击"新增结算记录"或"批量导入"开始添加游戏流水数据
+                    </p>
+                    <div className="flex gap-3 justify-center">
+                      <button
+                        onClick={() => {
+                          setEditingSettlement(null);
+                          setShowSettlementForm(true);
+                        }}
+                        className="bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-lg transition-all"
+                      >
+                        + 新增结算记录
+                      </button>
+                    </div>
+                  </div>
+                )}
               </>
             )}
           </div>
