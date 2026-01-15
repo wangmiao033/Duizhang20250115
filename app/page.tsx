@@ -274,167 +274,153 @@ export default function Home() {
   const categoryData = calculateCategorySummary(filteredTransactions.length > 0 ? filteredTransactions : transactions);
   const monthlyData = calculateMonthlySummary(filteredTransactions.length > 0 ? filteredTransactions : transactions);
 
+  const incomeCount = transactions.filter(t => t.type === 'income').length;
+  const expenseCount = transactions.filter(t => t.type === 'expense').length;
+
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 py-8 px-4">
-      <div className="max-w-7xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
-            游戏公司对账系统
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400">
-            内部对账管理系统 - 记录和管理公司财务流水
-          </p>
-        </div>
-
-        <SummaryCard summary={summary} />
-
-        <DateRangeFilter
-          startDate={startDate}
-          endDate={endDate}
-          onStartDateChange={setStartDate}
-          onEndDateChange={setEndDate}
-          onReset={handleResetDateRange}
-        />
-
-        <div className="mb-6 flex flex-wrap gap-4 items-center justify-between no-print">
-          <div className="flex gap-4 flex-wrap">
-            <button
-              onClick={() => {
-                setEditingTransaction(null);
-                setShowForm(true);
-              }}
-              className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-md transition-colors shadow-md"
-            >
-              + 新增记录
-            </button>
-            <QuickAdd onAdd={handleQuickAdd} />
-            <DataImport onImport={handleImport} />
-            <button
-              onClick={handleExport}
-              className="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-6 rounded-md transition-colors shadow-md"
-              disabled={transactions.length === 0}
-            >
-              导出 CSV
-            </button>
-            <button
-              onClick={handleExportExcel}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2 px-6 rounded-md transition-colors shadow-md"
-              disabled={transactions.length === 0}
-            >
-              导出 Excel
-            </button>
-            <button
-              onClick={handleExportStatement}
-              className="bg-cyan-600 hover:bg-cyan-700 text-white font-medium py-2 px-6 rounded-md transition-colors shadow-md"
-              disabled={transactions.length === 0}
-            >
-              导出对账单
-            </button>
-            <ExcelViewer />
-            <button
-              onClick={handleExportJSON}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-6 rounded-md transition-colors shadow-md"
-              disabled={transactions.length === 0}
-            >
-              备份数据
-            </button>
-            <button
-              onClick={handleImportJSON}
-              className="bg-yellow-600 hover:bg-yellow-700 text-white font-medium py-2 px-6 rounded-md transition-colors shadow-md"
-            >
-              恢复数据
-            </button>
-            <button
-              onClick={handlePrint}
-              className="bg-gray-600 hover:bg-gray-700 text-white font-medium py-2 px-6 rounded-md transition-colors shadow-md"
-              disabled={transactions.length === 0}
-            >
-              打印
-            </button>
-            {transactions.length > 0 && (
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+      {/* 顶部导航栏 */}
+      <div className="bg-white dark:bg-gray-800 shadow-lg border-b border-gray-200 dark:border-gray-700 sticky top-0 z-40">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            <div className="flex items-center space-x-4">
+              <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-2 rounded-lg">
+                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+              </div>
+              <div>
+                <h1 className="text-xl font-bold text-gray-900 dark:text-white">
+                  游戏公司对账系统
+                </h1>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  内部对账管理系统
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center space-x-2">
               <button
-                onClick={handleClearAll}
-                className="bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-6 rounded-md transition-colors shadow-md"
+                onClick={() => {
+                  setEditingTransaction(null);
+                  setShowForm(true);
+                }}
+                className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-all shadow-md hover:shadow-lg flex items-center space-x-2"
               >
-                清空数据
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+                <span>新增记录</span>
               </button>
-            )}
-          </div>
-
-          <div className="flex gap-4 flex-wrap">
-            <input
-              type="text"
-              placeholder="搜索..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-            />
-            <select
-              value={filterType}
-              onChange={(e) => setFilterType(e.target.value as 'all' | 'income' | 'expense')}
-              className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-            >
-              <option value="all">全部</option>
-              <option value="income">收入</option>
-              <option value="expense">支出</option>
-            </select>
+            </div>
           </div>
         </div>
+      </div>
 
-        <div className="mb-6 border-b border-gray-200 dark:border-gray-700 no-print">
-          <nav className="flex space-x-8 overflow-x-auto">
-            <button
-              onClick={() => setActiveTab('list')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
-                activeTab === 'list'
-                  ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
-              }`}
-            >
-              记录列表
-            </button>
-            <button
-              onClick={() => setActiveTab('stats')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
-                activeTab === 'stats'
-                  ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
-              }`}
-            >
-              类别统计
-            </button>
-            <button
-              onClick={() => setActiveTab('monthly')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
-                activeTab === 'monthly'
-                  ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
-              }`}
-            >
-              月度统计
-            </button>
-            <button
-              onClick={() => setActiveTab('yearly')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
-                activeTab === 'yearly'
-                  ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
-              }`}
-            >
-              年度统计
-            </button>
-            <button
-              onClick={() => setActiveTab('advanced')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
-                activeTab === 'advanced'
-                  ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
-              }`}
-            >
-              详细统计
-            </button>
-          </nav>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* 统计概览 */}
+        <div className="mb-8">
+          <SummaryCard summary={summary} />
         </div>
+
+        {/* 主要内容区域 */}
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          {/* 左侧：对账操作区 */}
+          <div className="lg:col-span-3 space-y-6">
+            {/* 操作工具栏 */}
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 no-print">
+              <div className="flex flex-wrap gap-3 mb-4">
+                <DateRangeFilter
+                  startDate={startDate}
+                  endDate={endDate}
+                  onStartDateChange={setStartDate}
+                  onEndDateChange={setEndDate}
+                  onReset={handleResetDateRange}
+                />
+              </div>
+              
+              <div className="flex flex-wrap gap-3 mb-4">
+                <QuickAdd onAdd={handleQuickAdd} />
+                <DataImport onImport={handleImport} />
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleExport}
+                    className="bg-green-500 hover:bg-green-600 text-white font-medium py-2 px-4 rounded-lg transition-all shadow-md hover:shadow-lg flex items-center space-x-2"
+                    disabled={transactions.length === 0}
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    <span>导出</span>
+                  </button>
+                  <button
+                    onClick={handleExportExcel}
+                    className="bg-emerald-500 hover:bg-emerald-600 text-white font-medium py-2 px-4 rounded-lg transition-all shadow-md hover:shadow-lg"
+                    disabled={transactions.length === 0}
+                  >
+                    Excel
+                  </button>
+                  <button
+                    onClick={handleExportStatement}
+                    className="bg-cyan-500 hover:bg-cyan-600 text-white font-medium py-2 px-4 rounded-lg transition-all shadow-md hover:shadow-lg"
+                    disabled={transactions.length === 0}
+                  >
+                    对账单
+                  </button>
+                </div>
+                <ExcelViewer />
+              </div>
+
+              <div className="flex flex-wrap gap-3 items-center">
+                <div className="flex-1 min-w-[200px]">
+                  <div className="relative">
+                    <input
+                      type="text"
+                      placeholder="搜索记录..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                    />
+                    <svg className="absolute left-3 top-2.5 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                  </div>
+                </div>
+                <select
+                  value={filterType}
+                  onChange={(e) => setFilterType(e.target.value as 'all' | 'income' | 'expense')}
+                  className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                >
+                  <option value="all">全部类型</option>
+                  <option value="income">仅收入</option>
+                  <option value="expense">仅支出</option>
+                </select>
+              </div>
+            </div>
+
+            {/* 标签页导航 */}
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-1 no-print">
+              <div className="flex space-x-1 overflow-x-auto">
+                {[
+                  { id: 'list', label: '📋 记录列表', icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z' },
+                  { id: 'stats', label: '📊 类别统计', icon: 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z' },
+                  { id: 'monthly', label: '📅 月度统计', icon: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z' },
+                  { id: 'yearly', label: '📆 年度统计', icon: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z' },
+                  { id: 'advanced', label: '📈 详细统计', icon: 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z' },
+                ].map((tab) => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id as any)}
+                    className={`flex-1 px-4 py-3 rounded-xl font-medium text-sm transition-all whitespace-nowrap ${
+                      activeTab === tab.id
+                        ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg'
+                        : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+                    }`}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+            </div>
 
         {showForm && (
           <div className="mb-6">
@@ -458,11 +444,11 @@ export default function Home() {
               onDeleteSelected={handleBatchDelete}
               totalCount={filteredTransactions.length}
             />
-            <div className="flex gap-4 mb-4 no-print">
+            <div className="flex gap-3 mb-4 no-print">
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as 'date' | 'amount' | 'category')}
-                className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white bg-white shadow-sm"
               >
                 <option value="date">按日期</option>
                 <option value="amount">按金额</option>
@@ -471,7 +457,7 @@ export default function Home() {
               <select
                 value={sortOrder}
                 onChange={(e) => setSortOrder(e.target.value as 'asc' | 'desc')}
-                className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white bg-white shadow-sm"
               >
                 <option value="desc">降序</option>
                 <option value="asc">升序</option>
@@ -496,7 +482,7 @@ export default function Home() {
               <select
                 value={categoryType}
                 onChange={(e) => setCategoryType(e.target.value as 'all' | 'income' | 'expense')}
-                className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white bg-white shadow-sm"
               >
                 <option value="all">全部类别</option>
                 <option value="income">仅收入</option>
@@ -518,6 +504,87 @@ export default function Home() {
         {activeTab === 'advanced' && (
           <AdvancedStats transactions={filteredTransactions.length > 0 ? filteredTransactions : transactions} />
         )}
+          </div>
+
+          {/* 右侧：数据统计面板 */}
+          <div className="lg:col-span-1 space-y-6">
+            {/* 快速统计卡片 */}
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center">
+                <svg className="w-5 h-5 mr-2 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+                快速统计
+              </h3>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                  <span className="text-sm text-gray-600 dark:text-gray-400">总记录</span>
+                  <span className="text-lg font-bold text-blue-600 dark:text-blue-400">{transactions.length}</span>
+                </div>
+                <div className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                  <span className="text-sm text-gray-600 dark:text-gray-400">收入</span>
+                  <span className="text-lg font-bold text-green-600 dark:text-green-400">{incomeCount}</span>
+                </div>
+                <div className="flex items-center justify-between p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
+                  <span className="text-sm text-gray-600 dark:text-gray-400">支出</span>
+                  <span className="text-lg font-bold text-red-600 dark:text-red-400">{expenseCount}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* 快捷操作 */}
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 no-print">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center">
+                <svg className="w-5 h-5 mr-2 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+                </svg>
+                快捷操作
+              </h3>
+              <div className="space-y-2">
+                <button
+                  onClick={handleExportJSON}
+                  className="w-full bg-indigo-500 hover:bg-indigo-600 text-white font-medium py-2 px-4 rounded-lg transition-all shadow-md hover:shadow-lg flex items-center justify-center space-x-2"
+                  disabled={transactions.length === 0}
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+                  </svg>
+                  <span>备份数据</span>
+                </button>
+                <button
+                  onClick={handleImportJSON}
+                  className="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-medium py-2 px-4 rounded-lg transition-all shadow-md hover:shadow-lg flex items-center justify-center space-x-2"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                  </svg>
+                  <span>恢复数据</span>
+                </button>
+                <button
+                  onClick={handlePrint}
+                  className="w-full bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-lg transition-all shadow-md hover:shadow-lg flex items-center justify-center space-x-2"
+                  disabled={transactions.length === 0}
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                  </svg>
+                  <span>打印</span>
+                </button>
+                {transactions.length > 0 && (
+                  <button
+                    onClick={handleClearAll}
+                    className="w-full bg-red-500 hover:bg-red-600 text-white font-medium py-2 px-4 rounded-lg transition-all shadow-md hover:shadow-lg flex items-center justify-center space-x-2"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                    <span>清空数据</span>
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       {toast && (

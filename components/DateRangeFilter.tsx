@@ -20,7 +20,7 @@ export default function DateRangeFilter({
     .toISOString().split('T')[0];
 
   return (
-    <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md mb-4">
+    <div className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-md border border-gray-200 dark:border-gray-700">
       <div className="flex flex-wrap gap-4 items-end">
         <div className="flex-1 min-w-[200px]">
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">

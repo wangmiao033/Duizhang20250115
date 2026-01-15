@@ -9,44 +9,49 @@ interface SummaryCardProps {
 
 export default function SummaryCard({ summary }: SummaryCardProps) {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-      <div className="bg-green-50 dark:bg-green-900/20 p-6 rounded-lg shadow-lg border border-green-200 dark:border-green-800">
-        <div className="text-sm font-medium text-green-600 dark:text-green-400 mb-1">
-          总收入
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="bg-gradient-to-br from-green-400 via-green-500 to-green-600 p-8 rounded-2xl shadow-xl text-white transform hover:scale-105 transition-transform duration-200">
+        <div className="flex items-center justify-between mb-4">
+          <div className="bg-white/20 p-3 rounded-xl">
+            <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+            </svg>
+          </div>
         </div>
-        <div className="text-2xl font-bold text-green-700 dark:text-green-300">
-          {formatCurrency(summary.totalIncome)}
-        </div>
+        <div className="text-green-100 text-sm font-medium mb-2">总收入</div>
+        <div className="text-4xl font-bold">{formatCurrency(summary.totalIncome)}</div>
       </div>
 
-      <div className="bg-red-50 dark:bg-red-900/20 p-6 rounded-lg shadow-lg border border-red-200 dark:border-red-800">
-        <div className="text-sm font-medium text-red-600 dark:text-red-400 mb-1">
-          总支出
+      <div className="bg-gradient-to-br from-red-400 via-red-500 to-red-600 p-8 rounded-2xl shadow-xl text-white transform hover:scale-105 transition-transform duration-200">
+        <div className="flex items-center justify-between mb-4">
+          <div className="bg-white/20 p-3 rounded-xl">
+            <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" />
+            </svg>
+          </div>
         </div>
-        <div className="text-2xl font-bold text-red-700 dark:text-red-300">
-          {formatCurrency(summary.totalExpense)}
-        </div>
+        <div className="text-red-100 text-sm font-medium mb-2">总支出</div>
+        <div className="text-4xl font-bold">{formatCurrency(summary.totalExpense)}</div>
       </div>
 
-      <div className={`p-6 rounded-lg shadow-lg border ${
+      <div className={`p-8 rounded-2xl shadow-xl text-white transform hover:scale-105 transition-transform duration-200 ${
         summary.balance >= 0
-          ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800'
-          : 'bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-800'
+          ? 'bg-gradient-to-br from-blue-400 via-blue-500 to-blue-600'
+          : 'bg-gradient-to-br from-orange-400 via-orange-500 to-orange-600'
       }`}>
-        <div className={`text-sm font-medium mb-1 ${
-          summary.balance >= 0
-            ? 'text-blue-600 dark:text-blue-400'
-            : 'text-orange-600 dark:text-orange-400'
+        <div className="flex items-center justify-between mb-4">
+          <div className="bg-white/20 p-3 rounded-xl">
+            <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+            </svg>
+          </div>
+        </div>
+        <div className={`text-sm font-medium mb-2 ${
+          summary.balance >= 0 ? 'text-blue-100' : 'text-orange-100'
         }`}>
           余额
         </div>
-        <div className={`text-2xl font-bold ${
-          summary.balance >= 0
-            ? 'text-blue-700 dark:text-blue-300'
-            : 'text-orange-700 dark:text-orange-300'
-        }`}>
-          {formatCurrency(summary.balance)}
-        </div>
+        <div className="text-4xl font-bold">{formatCurrency(summary.balance)}</div>
       </div>
     </div>
   );

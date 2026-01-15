@@ -43,10 +43,17 @@ export default function TransactionForm({ onSubmit, onCancel, initialData }: Tra
   };
 
   return (
-    <form onSubmit={handleSubmit} className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg">
-      <h2 className="text-2xl font-bold mb-4 text-gray-800 dark:text-white">
-        {initialData ? '编辑记录' : '新增对账记录'}
-      </h2>
+    <form onSubmit={handleSubmit} className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700">
+      <div className="flex items-center mb-6">
+        <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-3 rounded-xl mr-4">
+          <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+          </svg>
+        </div>
+        <h2 className="text-2xl font-bold text-gray-800 dark:text-white">
+          {initialData ? '编辑记录' : '新增对账记录'}
+        </h2>
+      </div>
       
       <div className="space-y-4">
         <div>
@@ -135,10 +142,10 @@ export default function TransactionForm({ onSubmit, onCancel, initialData }: Tra
           />
         </div>
 
-        <div className="flex gap-3 pt-2">
+        <div className="flex gap-3 pt-4">
           <button
             type="submit"
-            className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md transition-colors"
+            className="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-medium py-3 px-6 rounded-xl transition-all shadow-lg hover:shadow-xl"
           >
             {initialData ? '保存' : '添加'}
           </button>
@@ -146,7 +153,7 @@ export default function TransactionForm({ onSubmit, onCancel, initialData }: Tra
             <button
               type="button"
               onClick={onCancel}
-              className="flex-1 bg-gray-300 hover:bg-gray-400 dark:bg-gray-600 dark:hover:bg-gray-700 text-gray-800 dark:text-white font-medium py-2 px-4 rounded-md transition-colors"
+              className="flex-1 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-white font-medium py-3 px-6 rounded-xl transition-all"
             >
               取消
             </button>
