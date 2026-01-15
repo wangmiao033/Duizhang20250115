@@ -116,44 +116,8 @@ export const exportToCSV = (transactions: Transaction[]): void => {
 };
 
 export const exportToExcel = (transactions: Transaction[]): void => {
-  // 创建 HTML 表格格式的 Excel 文件
-  const headers = ['日期', '类型', '类别', '金额', '描述'];
-  const rows = transactions.map(t => [
-    t.date,
-    t.type === 'income' ? '收入' : '支出',
-    t.category,
-    t.amount.toString(),
-    t.description || '',
-  ]);
-
-  let html = `
-    <html>
-      <head>
-        <meta charset="utf-8">
-        <style>
-          table { border-collapse: collapse; width: 100%; }
-          th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-          th { background-color: #4CAF50; color: white; }
-        </style>
-      </head>
-      <body>
-        <table>
-          <tr>
-            ${headers.map(h => `<th>${h}</th>`).join('')}
-          </tr>
-          ${rows.map(row => `<tr>${row.map(cell => `<td>${cell}</td>`).join('')}</tr>`).join('')}
-        </table>
-      </body>
-    </html>
-  `;
-
-  const blob = new Blob(['\ufeff' + html], { type: 'application/vnd.ms-excel' });
-  const link = document.createElement('a');
-  const url = URL.createObjectURL(blob);
-  link.setAttribute('href', url);
-  link.setAttribute('download', `对账单_${new Date().toISOString().split('T')[0]}.xls`);
-  link.style.visibility = 'hidden';
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
+  // 使用新的 Excel 导出功能
+  import('@/lib/excel').then(({ exportToExcelFile }) => {
+    exportToExcelFile(transactions);
+  });
 };

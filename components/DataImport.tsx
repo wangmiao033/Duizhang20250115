@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Transaction } from '@/types';
+import { readExcelFile, parseExcelToTransactions } from '@/lib/excel';
 
 interface DataImportProps {
   onImport: (transactions: Transaction[]) => void;
@@ -15,11 +16,18 @@ export default function DataImport({ onImport }: DataImportProps) {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
     if (selectedFile) {
-      if (selectedFile.type === 'text/csv' || selectedFile.name.endsWith('.csv')) {
+      if (
+        selectedFile.type === 'text/csv' ||
+        selectedFile.name.endsWith('.csv') ||
+        selectedFile.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ||
+        selectedFile.type === 'application/vnd.ms-excel' ||
+        selectedFile.name.endsWith('.xlsx') ||
+        selectedFile.name.endsWith('.xls')
+      ) {
         setFile(selectedFile);
         setError('');
       } else {
-        setError('请选择 CSV 文件');
+        setError('请选择 CSV 或 Excel 文件');
         setFile(null);
       }
     }
@@ -64,30 +72,69 @@ export default function DataImport({ onImport }: DataImportProps) {
     return transactions;
   };
 
-  const handleImport = () => {
+  const handleImport = async () => {
     if (!file) {
       setError('请先选择文件');
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const text = e.target?.result as string;
-        const transactions = parseCSV(text);
-        if (transactions.length === 0) {
-          setError('未能解析到有效数据');
+    try {
+      let transactions: Transaction[] = [];
+
+      // 判断是 Excel 还是 CSV
+      if (
+        file.name.endsWith('.xlsx') ||
+        file.name.endsWith('.xls') ||
+        file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ||
+        file.type === 'application/vnd.ms-excel'
+      ) {
+        // 处理 Excel 文件
+        const sheets = await readExcelFile(file);
+        if (sheets.length === 0) {
+          setError('Excel 文件为空');
           return;
         }
-        onImport(transactions);
-        setIsOpen(false);
-        setFile(null);
-        setError('');
-      } catch (err) {
-        setError(err instanceof Error ? err.message : '导入失败');
+        
+        // 解析第一个工作表
+        transactions = parseExcelToTransactions(sheets[0]);
+        
+        // 如果有多个工作表，可以合并所有工作表的数据
+        if (sheets.length > 1) {
+          for (let i = 1; i < sheets.length; i++) {
+            const sheetTransactions = parseExcelToTransactions(sheets[i]);
+            transactions = [...transactions, ...sheetTransactions];
+          }
+        }
+      } else {
+        // 处理 CSV 文件
+        await new Promise<void>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            try {
+              const text = e.target?.result as string;
+              transactions = parseCSV(text);
+              resolve();
+            } catch (err) {
+              reject(err);
+            }
+          };
+          reader.onerror = () => reject(new Error('读取文件失败'));
+          reader.readAsText(file, 'UTF-8');
+        });
       }
-    };
-    reader.readAsText(file, 'UTF-8');
+
+      if (transactions.length === 0) {
+        setError('未能解析到有效数据');
+        return;
+      }
+
+      onImport(transactions);
+      setIsOpen(false);
+      setFile(null);
+      setError('');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '导入失败');
+    }
   };
 
   if (!isOpen) {
@@ -96,7 +143,7 @@ export default function DataImport({ onImport }: DataImportProps) {
         onClick={() => setIsOpen(true)}
         className="bg-purple-600 hover:bg-purple-700 text-white font-medium py-2 px-6 rounded-md transition-colors shadow-md"
       >
-        导入 CSV
+        导入数据
       </button>
     );
   }
@@ -119,11 +166,11 @@ export default function DataImport({ onImport }: DataImportProps) {
       <div className="space-y-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            选择 CSV 文件
+            选择文件（CSV 或 Excel）
           </label>
           <input
             type="file"
-            accept=".csv"
+            accept=".csv,.xlsx,.xls"
             onChange={handleFileChange}
             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
           />
@@ -156,8 +203,9 @@ export default function DataImport({ onImport }: DataImportProps) {
           </button>
         </div>
         <div className="text-xs text-gray-500 dark:text-gray-400">
-          <p>CSV 格式要求：</p>
-          <p>第一行：日期,类型,类别,金额,描述</p>
+          <p>支持格式：CSV、Excel (.xlsx, .xls)</p>
+          <p>CSV 格式要求：第一行：日期,类型,类别,金额,描述</p>
+          <p>Excel 格式：自动识别表头（日期、类型、类别、金额、描述）</p>
           <p>类型：收入 或 支出</p>
         </div>
       </div>

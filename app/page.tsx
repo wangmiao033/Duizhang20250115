@@ -20,6 +20,7 @@ import {
   exportToCSV,
   exportToExcel,
 } from '@/lib/utils';
+import { exportToStatementFormat } from '@/lib/excel';
 import TransactionForm from '@/components/TransactionForm';
 import TransactionList from '@/components/TransactionList';
 import SummaryCard from '@/components/SummaryCard';
@@ -29,6 +30,7 @@ import MonthlyStats from '@/components/MonthlyStats';
 import YearlyStats from '@/components/YearlyStats';
 import DataImport from '@/components/DataImport';
 import QuickAdd from '@/components/QuickAdd';
+import ExcelViewer from '@/components/ExcelViewer';
 import BatchActions from '@/components/BatchActions';
 import AdvancedStats from '@/components/AdvancedStats';
 import Toast from '@/components/Toast';
@@ -190,6 +192,17 @@ export default function Home() {
     showToast('Excel 导出成功', 'success');
   };
 
+  const handleExportStatement = () => {
+    const title = startDate && endDate 
+      ? `对账单_${startDate}_${endDate}`
+      : `对账单_${new Date().toISOString().split('T')[0]}`;
+    exportToStatementFormat(
+      filteredTransactions.length > 0 ? filteredTransactions : transactions,
+      title
+    );
+    showToast('对账单导出成功', 'success');
+  };
+
   const handleClearAll = () => {
     setConfirmDialog({
       isOpen: true,
@@ -310,6 +323,14 @@ export default function Home() {
             >
               导出 Excel
             </button>
+            <button
+              onClick={handleExportStatement}
+              className="bg-cyan-600 hover:bg-cyan-700 text-white font-medium py-2 px-6 rounded-md transition-colors shadow-md"
+              disabled={transactions.length === 0}
+            >
+              导出对账单
+            </button>
+            <ExcelViewer />
             <button
               onClick={handleExportJSON}
               className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-6 rounded-md transition-colors shadow-md"
