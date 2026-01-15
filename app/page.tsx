@@ -33,6 +33,7 @@ import BatchActions from '@/components/BatchActions';
 import AdvancedStats from '@/components/AdvancedStats';
 import Toast from '@/components/Toast';
 import ConfirmDialog from '@/components/ConfirmDialog';
+import VersionInfo from '@/components/VersionInfo';
 
 export default function Home() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -514,6 +515,8 @@ export default function Home() {
         onCancel={() => setConfirmDialog({ ...confirmDialog, isOpen: false })}
         type={confirmDialog.type}
       />
+
+      <VersionInfo />
     </div>
   );
 }
