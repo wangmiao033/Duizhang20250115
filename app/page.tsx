@@ -798,30 +798,43 @@ export default function Home() {
                     </button>
                     <DataBackup onRestore={loadSettlementRecords} />
                     <OperationLog />
-                    <button
-                      onClick={() => {
-                        // 格式化日期显示
-                        let period = '';
-                        if (startDate && endDate) {
-                          const start = new Date(startDate);
-                          const end = new Date(endDate);
-                          const startStr = `${start.getFullYear()}年${String(start.getMonth() + 1).padStart(2, '0')}月${String(start.getDate()).padStart(2, '0')}日`;
-                          const endStr = `${end.getFullYear()}年${String(end.getMonth() + 1).padStart(2, '0')}月${String(end.getDate()).padStart(2, '0')}日`;
-                          period = `${startStr}-${endStr}`;
-                        } else {
-                          const now = new Date();
-                          const year = now.getFullYear();
-                          const month = String(now.getMonth() + 1).padStart(2, '0');
-                          period = `${year}年${month}月01日-${year}年${month}月${new Date(year, now.getMonth() + 1, 0).getDate()}日`;
-                        }
-                        saveSettlementConfig({ period });
-                        setShowSettlementBill(true);
-                      }}
-                      className="bg-green-500 hover:bg-green-600 text-white font-medium py-2 px-4 rounded-lg transition-all shadow-md hover:shadow-lg"
-                      disabled={settlementRecords.length === 0}
-                    >
-                      📄 生成对账单
-                    </button>
+                  </div>
+                </div>
+
+                {/* 快捷操作面板 */}
+                <QuickActions
+                  records={settlementRecords}
+                  selectedIds={selectedSettlementIds}
+                  onNewRecord={() => {
+                    setEditingSettlement(null);
+                    setShowSettlementForm(true);
+                  }}
+                  onBatchImport={() => {}}
+                  onExportExcel={handleExportSettlementExcel}
+                  onExportCSV={handleExportSettlementCSV}
+                  onExportPDF={handleExportSettlementPDF}
+                  onGenerateBill={() => {
+                    let period = '';
+                    if (startDate && endDate) {
+                      const start = new Date(startDate);
+                      const end = new Date(endDate);
+                      const startStr = `${start.getFullYear()}年${String(start.getMonth() + 1).padStart(2, '0')}月${String(start.getDate()).padStart(2, '0')}日`;
+                      const endStr = `${end.getFullYear()}年${String(end.getMonth() + 1).padStart(2, '0')}月${String(end.getDate()).padStart(2, '0')}日`;
+                      period = `${startStr}-${endStr}`;
+                    } else {
+                      const now = new Date();
+                      const year = now.getFullYear();
+                      const month = String(now.getMonth() + 1).padStart(2, '0');
+                      period = `${year}年${month}月01日-${year}年${month}月${new Date(year, now.getMonth() + 1, 0).getDate()}日`;
+                    }
+                    saveSettlementConfig({ period });
+                    setShowSettlementBill(true);
+                  }}
+                  onBatchEdit={selectedSettlementIds.length > 0 ? () => setShowBatchEdit(true) : undefined}
+                  onBatchDelete={selectedSettlementIds.length > 0 ? () => setShowBatchDelete(true) : undefined}
+                />
+
+                <div className="flex gap-3 mb-4">
                     <button
                       onClick={() => {
                         setEditingSettlement(null);
