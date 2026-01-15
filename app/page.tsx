@@ -1057,9 +1057,6 @@ export default function Home() {
       />
 
       <VersionInfo />
-      
-      {/* 快捷键帮助 */}
-      <KeyboardShortcutsHelp />
     </div>
   );
 }
