@@ -50,7 +50,6 @@ import SettlementSearch from '@/components/SettlementSearch';
 import SettlementBatchEdit from '@/components/SettlementBatchEdit';
 import SettlementComparison from '@/components/SettlementComparison';
 import SettlementValidation from '@/components/SettlementValidation';
-import KeyboardShortcutsHelp from '@/components/KeyboardShortcutsHelp';
 import SettlementChart from '@/components/SettlementChart';
 import DataBackup from '@/components/DataBackup';
 import OperationLog, { logOperation } from '@/components/OperationLog';
