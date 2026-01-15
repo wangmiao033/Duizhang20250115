@@ -21,6 +21,7 @@ import {
   exportToExcel,
 } from '@/lib/utils';
 import { exportToStatementFormat } from '@/lib/excel';
+import { exportSettlementToPDF } from '@/lib/pdfExport';
 import TransactionForm from '@/components/TransactionForm';
 import TransactionList from '@/components/TransactionList';
 import SummaryCard from '@/components/SummaryCard';
