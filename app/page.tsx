@@ -56,6 +56,7 @@ import SettlementChart from '@/components/SettlementChart';
 import DataBackup from '@/components/DataBackup';
 import OperationLog, { logOperation } from '@/components/OperationLog';
 import SettlementSort, { SortField, SortOrder } from '@/components/SettlementSort';
+import QuickActions from '@/components/QuickActions';
 import { exportSettlementToCSV } from '@/lib/settlementExport';
 import { exportSettlementToExcel } from '@/lib/settlementExport';
 import { updateCalculatedFields } from '@/lib/settlement';
