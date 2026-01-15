@@ -41,6 +41,25 @@ export default function SettlementForm({ onSubmit, onCancel, initialData }: Sett
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // 数据验证
+    if (!formData.billingPeriod || !formData.billingPeriod.trim()) {
+      alert('请输入计费周期');
+      return;
+    }
+    if (!formData.gameName || !formData.gameName.trim()) {
+      alert('请输入游戏名称');
+      return;
+    }
+    if (!formData.rechargeAmount || formData.rechargeAmount <= 0) {
+      alert('请输入有效的充值金额');
+      return;
+    }
+    if (!formData.settlementRatio || formData.settlementRatio <= 0 || formData.settlementRatio > 100) {
+      alert('请输入有效的结算比例（0-100）');
+      return;
+    }
+
     const record = updateCalculatedFields({
       ...formData,
       id: initialData?.id || Date.now().toString(),

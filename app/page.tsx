@@ -41,6 +41,11 @@ import SettlementList from '@/components/SettlementList';
 import SettlementBill from '@/components/SettlementBill';
 import SettlementGuide from '@/components/SettlementGuide';
 import SettlementBatchImport from '@/components/SettlementBatchImport';
+import SettlementConfig from '@/components/SettlementConfig';
+import SettlementStats from '@/components/SettlementStats';
+import SettlementRowCopy from '@/components/SettlementRowCopy';
+import SettlementHistory from '@/components/SettlementHistory';
+import { exportSettlementToExcel } from '@/lib/settlementExport';
 import {
   getSettlementRecords,
   saveSettlementRecord,
@@ -70,6 +75,7 @@ export default function Home() {
   const [editingSettlement, setEditingSettlement] = useState<GameSettlementRecord | null>(null);
   const [showSettlementBill, setShowSettlementBill] = useState(false);
   const [showSettlementGuide, setShowSettlementGuide] = useState(true);
+  const [showSettlementConfig, setShowSettlementConfig] = useState(false);
   const [settlementConfig, setSettlementConfig] = useState<SettlementBillConfig>(getSettlementConfig());
   const [categoryType, setCategoryType] = useState<'all' | 'income' | 'expense'>('all');
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -313,6 +319,17 @@ export default function Home() {
     });
     loadSettlementRecords();
     showToast(`成功导入 ${records.length} 条结算记录`, 'success');
+  };
+
+  const handleExportSettlementExcel = () => {
+    exportSettlementToExcel(settlementRecords, settlementConfig);
+    showToast('Excel 对账单导出成功', 'success');
+  };
+
+  const handleSettlementConfigSave = () => {
+    setSettlementConfig(getSettlementConfig());
+    setShowSettlementConfig(false);
+    showToast('配置保存成功', 'success');
   };
 
   const handleSettlementEdit = (record: GameSettlementRecord) => {
@@ -605,6 +622,19 @@ export default function Home() {
                       </button>
                     )}
                     <button
+                      onClick={() => setShowSettlementConfig(true)}
+                      className="bg-purple-500 hover:bg-purple-600 text-white font-medium py-2 px-4 rounded-lg transition-all shadow-md hover:shadow-lg text-sm"
+                    >
+                      ⚙️ 配置
+                    </button>
+                    <button
+                      onClick={handleExportSettlementExcel}
+                      className="bg-emerald-500 hover:bg-emerald-600 text-white font-medium py-2 px-4 rounded-lg transition-all shadow-md hover:shadow-lg text-sm"
+                      disabled={settlementRecords.length === 0}
+                    >
+                      📥 导出Excel
+                    </button>
+                    <button
                       onClick={() => {
                         // 格式化日期显示
                         let period = '';
@@ -640,8 +670,64 @@ export default function Home() {
                   </div>
                 </div>
 
-                {/* 批量导入 */}
-                <SettlementBatchImport onImport={handleSettlementBatchImport} />
+                {/* 结算统计 */}
+                {settlementRecords.length > 0 && !showSettlementConfig && (
+                  <>
+                    <SettlementStats records={settlementRecords} />
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                      <div className="lg:col-span-2">
+                        {settlementRecords.length > 0 ? (
+                          <SettlementList
+                            records={settlementRecords}
+                            onEdit={handleSettlementEdit}
+                            onDelete={handleSettlementDelete}
+                          />
+                        ) : (
+                          <div className="bg-white dark:bg-gray-800 p-12 rounded-2xl shadow-lg text-center border border-gray-200 dark:border-gray-700">
+                            <svg className="w-16 h-16 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            <p className="text-gray-500 dark:text-gray-400 text-lg mb-2">还没有结算记录</p>
+                            <p className="text-gray-400 dark:text-gray-500 text-sm mb-4">
+                              点击"新增结算记录"或"批量导入"开始添加游戏流水数据
+                            </p>
+                            <div className="flex gap-3 justify-center">
+                              <button
+                                onClick={() => {
+                                  setEditingSettlement(null);
+                                  setShowSettlementForm(true);
+                                }}
+                                className="bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-lg transition-all"
+                              >
+                                + 新增结算记录
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                      <div className="lg:col-span-1">
+                        <SettlementHistory onSelect={(records) => {
+                          // 可以在这里实现选择历史记录的功能
+                          console.log('选择历史记录:', records);
+                        }} />
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {/* 配置管理 */}
+                {showSettlementConfig && (
+                  <SettlementConfig
+                    onSave={handleSettlementConfigSave}
+                    onCancel={() => setShowSettlementConfig(false)}
+                  />
+                )}
+
+                {/* 批量导入和粘贴 */}
+                <div className="flex gap-3 flex-wrap">
+                  <SettlementBatchImport onImport={handleSettlementBatchImport} />
+                  <SettlementRowCopy onPaste={handleSettlementBatchImport} />
+                </div>
 
                 {showSettlementForm && (
                   <SettlementForm
@@ -652,35 +738,6 @@ export default function Home() {
                     }}
                     initialData={editingSettlement || undefined}
                   />
-                )}
-
-                {settlementRecords.length > 0 ? (
-                  <SettlementList
-                    records={settlementRecords}
-                    onEdit={handleSettlementEdit}
-                    onDelete={handleSettlementDelete}
-                  />
-                ) : (
-                  <div className="bg-white dark:bg-gray-800 p-12 rounded-2xl shadow-lg text-center border border-gray-200 dark:border-gray-700">
-                    <svg className="w-16 h-16 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                    <p className="text-gray-500 dark:text-gray-400 text-lg mb-2">还没有结算记录</p>
-                    <p className="text-gray-400 dark:text-gray-500 text-sm mb-4">
-                      点击"新增结算记录"或"批量导入"开始添加游戏流水数据
-                    </p>
-                    <div className="flex gap-3 justify-center">
-                      <button
-                        onClick={() => {
-                          setEditingSettlement(null);
-                          setShowSettlementForm(true);
-                        }}
-                        className="bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-lg transition-all"
-                      >
-                        + 新增结算记录
-                      </button>
-                    </div>
-                  </div>
                 )}
               </>
             )}
