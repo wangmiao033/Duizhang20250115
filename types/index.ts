@@ -13,3 +13,17 @@ export interface Summary {
   totalExpense: number;
   balance: number;
 }
+
+export interface CategorySummary {
+  category: string;
+  income: number;
+  expense: number;
+  total: number;
+}
+
+export interface MonthlySummary {
+  month: string;
+  income: number;
+  expense: number;
+  balance: number;
+}

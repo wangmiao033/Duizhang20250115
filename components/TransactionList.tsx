@@ -16,17 +16,8 @@ export default function TransactionList({
   transactions,
   onEdit,
   onDelete,
-  searchTerm = '',
-  filterType = 'all',
 }: TransactionListProps) {
   const filteredTransactions = transactions
-    .filter(t => {
-      const matchesSearch = !searchTerm || 
-        t.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        t.category.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesType = filterType === 'all' || t.type === filterType;
-      return matchesSearch && matchesType;
-    })
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   if (filteredTransactions.length === 0) {

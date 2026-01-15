@@ -32,3 +32,25 @@ export const deleteTransaction = (id: string): void => {
 export const clearAllTransactions = (): void => {
   localStorage.removeItem(STORAGE_KEY);
 };
+
+export const importTransactions = (transactions: Transaction[]): void => {
+  const existing = getTransactions();
+  const merged = [...existing, ...transactions];
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+};
+
+export const exportToJSON = (): string => {
+  const transactions = getTransactions();
+  return JSON.stringify(transactions, null, 2);
+};
+
+export const importFromJSON = (json: string): void => {
+  try {
+    const transactions = JSON.parse(json) as Transaction[];
+    if (Array.isArray(transactions)) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(transactions));
+    }
+  } catch (error) {
+    throw new Error('无效的 JSON 格式');
+  }
+};

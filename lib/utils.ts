@@ -1,10 +1,14 @@
-import { Transaction, Summary } from '@/types';
+import { Transaction, Summary, CategorySummary, MonthlySummary } from '@/types';
 
 export const formatCurrency = (amount: number): string => {
   return new Intl.NumberFormat('zh-CN', {
     style: 'currency',
     currency: 'CNY',
   }).format(amount);
+};
+
+export const formatDate = (date: string): string => {
+  return new Date(date).toLocaleDateString('zh-CN');
 };
 
 export const calculateSummary = (transactions: Transaction[]): Summary => {
@@ -21,6 +25,68 @@ export const calculateSummary = (transactions: Transaction[]): Summary => {
     totalExpense,
     balance: totalIncome - totalExpense,
   };
+};
+
+export const calculateCategorySummary = (transactions: Transaction[]): CategorySummary[] => {
+  const categoryMap = new Map<string, { income: number; expense: number }>();
+  
+  transactions.forEach(t => {
+    if (!categoryMap.has(t.category)) {
+      categoryMap.set(t.category, { income: 0, expense: 0 });
+    }
+    const category = categoryMap.get(t.category)!;
+    if (t.type === 'income') {
+      category.income += t.amount;
+    } else {
+      category.expense += t.amount;
+    }
+  });
+  
+  return Array.from(categoryMap.entries())
+    .map(([category, amounts]) => ({
+      category,
+      income: amounts.income,
+      expense: amounts.expense,
+      total: amounts.income - amounts.expense,
+    }))
+    .sort((a, b) => Math.abs(b.total) - Math.abs(a.total));
+};
+
+export const calculateMonthlySummary = (transactions: Transaction[]): MonthlySummary[] => {
+  const monthlyMap = new Map<string, { income: number; expense: number }>();
+  
+  transactions.forEach(t => {
+    const month = t.date.substring(0, 7); // YYYY-MM
+    if (!monthlyMap.has(month)) {
+      monthlyMap.set(month, { income: 0, expense: 0 });
+    }
+    const monthData = monthlyMap.get(month)!;
+    if (t.type === 'income') {
+      monthData.income += t.amount;
+    } else {
+      monthData.expense += t.amount;
+    }
+  });
+  
+  return Array.from(monthlyMap.entries())
+    .map(([month, amounts]) => ({
+      month,
+      income: amounts.income,
+      expense: amounts.expense,
+      balance: amounts.income - amounts.expense,
+    }))
+    .sort((a, b) => b.month.localeCompare(a.month));
+};
+
+export const filterByDateRange = (
+  transactions: Transaction[],
+  startDate: string,
+  endDate: string
+): Transaction[] => {
+  return transactions.filter(t => {
+    const date = t.date;
+    return date >= startDate && date <= endDate;
+  });
 };
 
 export const exportToCSV = (transactions: Transaction[]): void => {
