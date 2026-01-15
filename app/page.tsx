@@ -22,6 +22,7 @@ import {
 } from '@/lib/utils';
 import { exportToStatementFormat } from '@/lib/excel';
 import { exportSettlementToPDF } from '@/lib/pdfExport';
+import { exportSettlementToPDF } from '@/lib/pdfExport';
 import TransactionForm from '@/components/TransactionForm';
 import TransactionList from '@/components/TransactionList';
 import SummaryCard from '@/components/SummaryCard';
@@ -786,6 +787,13 @@ export default function Home() {
                       disabled={settlementRecords.length === 0}
                     >
                       📄 导出CSV
+                    </button>
+                    <button
+                      onClick={handleExportSettlementPDF}
+                      className="bg-red-500 hover:bg-red-600 text-white font-medium py-2 px-4 rounded-lg transition-all shadow-md hover:shadow-lg text-sm"
+                      disabled={settlementRecords.length === 0}
+                    >
+                      📑 导出PDF
                     </button>
                     <DataBackup onRestore={loadSettlementRecords} />
                     <OperationLog />
