@@ -2,15 +2,73 @@
 
 import { GameSettlementRecord } from '@/types';
 import { formatAmount } from '@/lib/chineseNumber';
+import { SortField, SortOrder } from './SettlementSort';
 
 interface SettlementListProps {
   records: GameSettlementRecord[];
   onEdit: (record: GameSettlementRecord) => void;
   onDelete: (id: string) => void;
+  selectedIds?: string[];
+  onSelect?: (id: string) => void;
+  onSelectAll?: () => void;
+  sortField?: SortField;
+  sortOrder?: SortOrder;
 }
 
-export default function SettlementList({ records, onEdit, onDelete }: SettlementListProps) {
-  const sortedRecords = [...records].sort((a, b) => (a.serialNo || 0) - (b.serialNo || 0));
+export default function SettlementList({ 
+  records, 
+  onEdit, 
+  onDelete,
+  selectedIds = [],
+  onSelect,
+  onSelectAll,
+  sortField = 'serialNo',
+  sortOrder = 'asc',
+}: SettlementListProps) {
+  const sortedRecords = [...records].sort((a, b) => {
+    let aValue: any;
+    let bValue: any;
+
+    switch (sortField) {
+      case 'serialNo':
+        aValue = a.serialNo || 0;
+        bValue = b.serialNo || 0;
+        break;
+      case 'billingPeriod':
+        aValue = a.billingPeriod || '';
+        bValue = b.billingPeriod || '';
+        break;
+      case 'gameName':
+        aValue = a.gameName || '';
+        bValue = b.gameName || '';
+        break;
+      case 'flow':
+        aValue = a.flow || 0;
+        bValue = b.flow || 0;
+        break;
+      case 'rechargeAmount':
+        aValue = a.rechargeAmount || 0;
+        bValue = b.rechargeAmount || 0;
+        break;
+      case 'settlementAmount':
+        aValue = a.settlementAmount || 0;
+        bValue = b.settlementAmount || 0;
+        break;
+      default:
+        aValue = a.serialNo || 0;
+        bValue = b.serialNo || 0;
+    }
+
+    if (typeof aValue === 'string') {
+      return sortOrder === 'asc' 
+        ? aValue.localeCompare(bValue)
+        : bValue.localeCompare(aValue);
+    } else {
+      return sortOrder === 'asc' 
+        ? aValue - bValue
+        : bValue - aValue;
+    }
+  });
 
   if (sortedRecords.length === 0) {
     return (
@@ -26,6 +84,16 @@ export default function SettlementList({ records, onEdit, onDelete }: Settlement
         <table className="w-full text-sm">
           <thead className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-800">
             <tr>
+              {onSelect && (
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
+                  <input
+                    type="checkbox"
+                    checked={selectedIds.length === sortedRecords.length && sortedRecords.length > 0}
+                    onChange={onSelectAll}
+                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                </th>
+              )}
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">序号</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">计费周期</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">游戏名称</th>
@@ -38,7 +106,22 @@ export default function SettlementList({ records, onEdit, onDelete }: Settlement
           </thead>
           <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
             {sortedRecords.map((record) => (
-              <tr key={record.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+              <tr 
+                key={record.id} 
+                className={`hover:bg-gray-50 dark:hover:bg-gray-700 ${
+                  selectedIds.includes(record.id) ? 'bg-blue-50 dark:bg-blue-900/20' : ''
+                }`}
+              >
+                {onSelect && (
+                  <td className="px-4 py-3">
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.includes(record.id)}
+                      onChange={() => onSelect(record.id)}
+                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                  </td>
+                )}
                 <td className="px-4 py-3 text-gray-900 dark:text-gray-100">{record.serialNo}</td>
                 <td className="px-4 py-3 text-gray-900 dark:text-gray-100">{record.billingPeriod}</td>
                 <td className="px-4 py-3 text-gray-900 dark:text-gray-100">{record.gameName}</td>

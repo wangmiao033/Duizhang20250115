@@ -45,7 +45,19 @@ import SettlementConfig from '@/components/SettlementConfig';
 import SettlementStats from '@/components/SettlementStats';
 import SettlementRowCopy from '@/components/SettlementRowCopy';
 import SettlementHistory from '@/components/SettlementHistory';
+import SettlementSearch from '@/components/SettlementSearch';
+import SettlementBatchEdit from '@/components/SettlementBatchEdit';
+import SettlementComparison from '@/components/SettlementComparison';
+import SettlementValidation from '@/components/SettlementValidation';
+import KeyboardShortcutsHelp from '@/components/KeyboardShortcutsHelp';
+import SettlementChart from '@/components/SettlementChart';
+import DataBackup from '@/components/DataBackup';
+import OperationLog, { logOperation } from '@/components/OperationLog';
+import SettlementSort, { SortField, SortOrder } from '@/components/SettlementSort';
+import { exportSettlementToCSV } from '@/lib/settlementExport';
 import { exportSettlementToExcel } from '@/lib/settlementExport';
+import { updateCalculatedFields } from '@/lib/settlement';
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import {
   getSettlementRecords,
   saveSettlementRecord,
@@ -76,7 +88,14 @@ export default function Home() {
   const [showSettlementBill, setShowSettlementBill] = useState(false);
   const [showSettlementGuide, setShowSettlementGuide] = useState(true);
   const [showSettlementConfig, setShowSettlementConfig] = useState(false);
+  const [showSettlementComparison, setShowSettlementComparison] = useState(false);
+  const [showBatchEdit, setShowBatchEdit] = useState(false);
   const [settlementConfig, setSettlementConfig] = useState<SettlementBillConfig>(getSettlementConfig());
+  const [settlementSearchTerm, setSettlementSearchTerm] = useState('');
+  const [settlementFilterPeriod, setSettlementFilterPeriod] = useState('all');
+  const [selectedSettlementIds, setSelectedSettlementIds] = useState<string[]>([]);
+  const [settlementSortField, setSettlementSortField] = useState<SortField>('serialNo');
+  const [settlementSortOrder, setSettlementSortOrder] = useState<SortOrder>('asc');
   const [categoryType, setCategoryType] = useState<'all' | 'income' | 'expense'>('all');
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState<'date' | 'amount' | 'category'>('date');
@@ -99,6 +118,39 @@ export default function Home() {
     loadTransactions();
     loadSettlementRecords();
   }, []);
+
+  // 快捷键支持
+  useKeyboardShortcuts({
+    'ctrl+n': () => {
+      if (activeTab === 'settlement' && !showSettlementForm) {
+        setEditingSettlement(null);
+        setShowSettlementForm(true);
+      }
+    },
+    'ctrl+e': () => {
+      if (activeTab === 'settlement' && settlementRecords.length > 0) {
+        handleExportSettlementExcel();
+      }
+    },
+    'ctrl+p': () => {
+      if (activeTab === 'settlement' && showSettlementBill) {
+        window.print();
+      }
+    },
+    'escape': () => {
+      if (showSettlementForm) {
+        setShowSettlementForm(false);
+        setEditingSettlement(null);
+      }
+      if (showSettlementConfig) {
+        setShowSettlementConfig(false);
+      }
+      if (showBatchEdit) {
+        setShowBatchEdit(false);
+        setSelectedSettlementIds([]);
+      }
+    },
+  });
 
   useEffect(() => {
     applyFilters();
@@ -306,11 +358,20 @@ export default function Home() {
   };
 
   const handleSettlementSubmit = (record: GameSettlementRecord) => {
+    const isUpdate = editingSettlement !== null;
     saveSettlementRecord(record);
     loadSettlementRecords();
     setShowSettlementForm(false);
     setEditingSettlement(null);
-    showToast(editingSettlement ? '结算记录更新成功' : '结算记录添加成功', 'success');
+    showToast(isUpdate ? '结算记录更新成功' : '结算记录添加成功', 'success');
+    
+    // 记录操作日志
+    logOperation(
+      isUpdate ? '更新结算记录' : '创建结算记录',
+      isUpdate ? 'update' : 'create',
+      record.gameName,
+      `计费周期：${record.billingPeriod}`
+    );
   };
 
   const handleSettlementBatchImport = (records: GameSettlementRecord[]) => {
@@ -319,11 +380,24 @@ export default function Home() {
     });
     loadSettlementRecords();
     showToast(`成功导入 ${records.length} 条结算记录`, 'success');
+    logOperation('批量导入', 'import', '结算记录', `${records.length} 条记录`);
   };
 
   const handleExportSettlementExcel = () => {
     exportSettlementToExcel(settlementRecords, settlementConfig);
     showToast('Excel 对账单导出成功', 'success');
+    logOperation('导出Excel', 'export', '结算对账单', `${settlementRecords.length} 条记录`);
+  };
+
+  const handleExportSettlementCSV = () => {
+    exportSettlementToCSV(settlementRecords, settlementConfig);
+    showToast('CSV 文件导出成功', 'success');
+    logOperation('导出CSV', 'export', '结算对账单', `${settlementRecords.length} 条记录`);
+  };
+
+  const handleSettlementSortChange = (field: SortField, order: SortOrder) => {
+    setSettlementSortField(field);
+    setSettlementSortOrder(order);
   };
 
   const handleSettlementConfigSave = () => {
@@ -332,12 +406,73 @@ export default function Home() {
     showToast('配置保存成功', 'success');
   };
 
+  const handleSettlementSearch = (searchTerm: string) => {
+    setSettlementSearchTerm(searchTerm);
+  };
+
+  const handleSettlementFilterPeriod = (period: string) => {
+    setSettlementFilterPeriod(period);
+  };
+
+  const handleSettlementSelect = (id: string) => {
+    setSelectedSettlementIds(prev =>
+      prev.includes(id) ? prev.filter(selectedId => selectedId !== id) : [...prev, id]
+    );
+  };
+
+  const handleSettlementSelectAll = () => {
+    const filtered = getFilteredSettlementRecords();
+    if (selectedSettlementIds.length === filtered.length) {
+      setSelectedSettlementIds([]);
+    } else {
+      setSelectedSettlementIds(filtered.map(r => r.id));
+    }
+  };
+
+  const getFilteredSettlementRecords = (): GameSettlementRecord[] => {
+    let filtered = settlementRecords;
+
+    // 搜索筛选
+    if (settlementSearchTerm) {
+      filtered = filtered.filter(r =>
+        r.gameName.toLowerCase().includes(settlementSearchTerm.toLowerCase()) ||
+        r.billingPeriod.toLowerCase().includes(settlementSearchTerm.toLowerCase())
+      );
+    }
+
+    // 周期筛选
+    if (settlementFilterPeriod !== 'all') {
+      filtered = filtered.filter(r => r.billingPeriod === settlementFilterPeriod);
+    }
+
+    return filtered;
+  };
+
+  const handleBatchUpdate = (updates: Partial<GameSettlementRecord>) => {
+    selectedSettlementIds.forEach(id => {
+      const record = settlementRecords.find(r => r.id === id);
+      if (record) {
+        const updated = {
+          ...record,
+          ...updates,
+        };
+        const finalRecord = updateCalculatedFields(updated);
+        saveSettlementRecord(finalRecord);
+      }
+    });
+    loadSettlementRecords();
+    setSelectedSettlementIds([]);
+    setShowBatchEdit(false);
+    showToast(`成功更新 ${selectedSettlementIds.length} 条记录`, 'success');
+  };
+
   const handleSettlementEdit = (record: GameSettlementRecord) => {
     setEditingSettlement(record);
     setShowSettlementForm(true);
   };
 
   const handleSettlementDelete = (id: string) => {
+    const record = settlementRecords.find(r => r.id === id);
     setConfirmDialog({
       isOpen: true,
       title: '确认删除',
@@ -348,6 +483,16 @@ export default function Home() {
         loadSettlementRecords();
         setConfirmDialog({ ...confirmDialog, isOpen: false });
         showToast('删除成功', 'success');
+        
+        // 记录操作日志
+        if (record) {
+          logOperation(
+            '删除结算记录',
+            'delete',
+            record.gameName,
+            `计费周期：${record.billingPeriod}`
+          );
+        }
       },
     });
   };
@@ -635,6 +780,15 @@ export default function Home() {
                       📥 导出Excel
                     </button>
                     <button
+                      onClick={handleExportSettlementCSV}
+                      className="bg-teal-500 hover:bg-teal-600 text-white font-medium py-2 px-4 rounded-lg transition-all shadow-md hover:shadow-lg text-sm"
+                      disabled={settlementRecords.length === 0}
+                    >
+                      📄 导出CSV
+                    </button>
+                    <DataBackup onRestore={loadSettlementRecords} />
+                    <OperationLog />
+                    <button
                       onClick={() => {
                         // 格式化日期显示
                         let period = '';
@@ -667,20 +821,86 @@ export default function Home() {
                     >
                       + 新增结算记录
                     </button>
+                    {settlementRecords.length > 0 && (
+                      <>
+                        <button
+                          onClick={() => setShowSettlementComparison(!showSettlementComparison)}
+                          className="bg-orange-500 hover:bg-orange-600 text-white font-medium py-2 px-4 rounded-lg transition-all shadow-md hover:shadow-lg text-sm"
+                        >
+                          📊 周期对比
+                        </button>
+                        {selectedSettlementIds.length > 0 && (
+                          <button
+                            onClick={() => setShowBatchEdit(true)}
+                            className="bg-indigo-500 hover:bg-indigo-600 text-white font-medium py-2 px-4 rounded-lg transition-all shadow-md hover:shadow-lg text-sm"
+                          >
+                            ✏️ 批量编辑 ({selectedSettlementIds.length})
+                          </button>
+                        )}
+                      </>
+                    )}
                   </div>
                 </div>
+
+                {/* 数据校验 */}
+                {settlementRecords.length > 0 && !showSettlementConfig && (
+                  <SettlementValidation records={settlementRecords} />
+                )}
+
+                {/* 周期对比 */}
+                {showSettlementComparison && !showSettlementConfig && (
+                  <SettlementComparison records={settlementRecords} />
+                )}
+
+                {/* 批量编辑 */}
+                {showBatchEdit && (
+                  <SettlementBatchEdit
+                    selectedIds={selectedSettlementIds}
+                    records={settlementRecords}
+                    onUpdate={handleBatchUpdate}
+                    onClose={() => {
+                      setShowBatchEdit(false);
+                      setSelectedSettlementIds([]);
+                    }}
+                  />
+                )}
 
                 {/* 结算统计 */}
                 {settlementRecords.length > 0 && !showSettlementConfig && (
                   <>
                     <SettlementStats records={settlementRecords} />
+                    
+                    {/* 图表展示 */}
+                    {settlementRecords.length > 0 && (
+                      <SettlementChart records={settlementRecords} />
+                    )}
+                    
+                    {/* 搜索和筛选 */}
+                    <div className="flex flex-wrap gap-3 items-center">
+                      <SettlementSearch
+                        onSearch={handleSettlementSearch}
+                        onFilterPeriod={handleSettlementFilterPeriod}
+                        periods={Array.from(new Set(settlementRecords.map(r => r.billingPeriod).filter(Boolean)))}
+                      />
+                      <SettlementSort
+                        onSortChange={handleSettlementSortChange}
+                        currentField={settlementSortField}
+                        currentOrder={settlementSortOrder}
+                      />
+                    </div>
+
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                       <div className="lg:col-span-2">
-                        {settlementRecords.length > 0 ? (
+                        {getFilteredSettlementRecords().length > 0 ? (
                           <SettlementList
-                            records={settlementRecords}
+                            records={getFilteredSettlementRecords()}
                             onEdit={handleSettlementEdit}
                             onDelete={handleSettlementDelete}
+                            selectedIds={selectedSettlementIds}
+                            onSelect={handleSettlementSelect}
+                            onSelectAll={handleSettlementSelectAll}
+                            sortField={settlementSortField}
+                            sortOrder={settlementSortOrder}
                           />
                         ) : (
                           <div className="bg-white dark:bg-gray-800 p-12 rounded-2xl shadow-lg text-center border border-gray-200 dark:border-gray-700">
@@ -844,6 +1064,9 @@ export default function Home() {
       />
 
       <VersionInfo />
+      
+      {/* 快捷键帮助 */}
+      <KeyboardShortcutsHelp />
     </div>
   );
 }

@@ -114,3 +114,83 @@ export const exportSettlementToExcel = (
   // 导出文件
   XLSX.writeFile(workbook, filename);
 };
+
+/**
+ * 导出结算记录为 CSV
+ */
+export const exportSettlementToCSV = (
+  records: GameSettlementRecord[],
+  config: SettlementBillConfig
+): void => {
+  const sortedRecords = [...records].sort((a, b) => (a.serialNo || 0) - (b.serialNo || 0));
+  const summary = calculateSettlementSummary(records);
+
+  // CSV 表头
+  const headers = [
+    '序号',
+    '计费周期',
+    '游戏名称',
+    '流水',
+    '充值金额',
+    '测试费金额',
+    '代金券金额',
+    '退款',
+    '实际结算金额',
+    '渠道费',
+    '税费',
+    '结算比例',
+    '结算金额',
+  ];
+
+  // 构建 CSV 内容
+  let csvContent = '\uFEFF'; // BOM for Excel UTF-8
+  csvContent += headers.join(',') + '\n';
+
+  // 添加数据行
+  sortedRecords.forEach((record) => {
+    csvContent += [
+      record.serialNo,
+      `"${record.billingPeriod}"`,
+      `"${record.gameName}"`,
+      record.flow,
+      record.rechargeAmount,
+      record.testFeeAmount,
+      record.voucherAmount,
+      record.refund,
+      record.actualSettlementAmount,
+      record.channelFee,
+      record.taxFee,
+      record.settlementRatio,
+      record.settlementAmount,
+    ].join(',') + '\n';
+  });
+
+  // 添加合计行
+  csvContent += '\n';
+  csvContent += [
+    '合计',
+    '',
+    '',
+    summary.totalFlow,
+    summary.totalRechargeAmount,
+    summary.totalTestFeeAmount,
+    summary.totalVoucherAmount,
+    '',
+    summary.totalActualSettlementAmount,
+    '',
+    '',
+    '',
+    summary.totalSettlementAmount,
+  ].join(',') + '\n';
+
+  // 下载文件
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${config.title}_${config.period || new Date().toISOString().split('T')[0]}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+};
