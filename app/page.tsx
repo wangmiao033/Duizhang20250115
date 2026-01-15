@@ -90,6 +90,7 @@ export default function Home() {
   const [showSettlementConfig, setShowSettlementConfig] = useState(false);
   const [showSettlementComparison, setShowSettlementComparison] = useState(false);
   const [showBatchEdit, setShowBatchEdit] = useState(false);
+  const [showBatchDelete, setShowBatchDelete] = useState(false);
   const [settlementConfig, setSettlementConfig] = useState<SettlementBillConfig>(getSettlementConfig());
   const [settlementSearchTerm, setSettlementSearchTerm] = useState('');
   const [settlementFilterPeriod, setSettlementFilterPeriod] = useState('all');
@@ -466,6 +467,27 @@ export default function Home() {
             `计费周期：${record.billingPeriod}`
           );
         }
+      },
+    });
+  };
+
+  const handleSettlementBatchDelete = () => {
+    if (selectedSettlementIds.length === 0) return;
+    setConfirmDialog({
+      isOpen: true,
+      title: '批量删除',
+      message: `确定要删除选中的 ${selectedSettlementIds.length} 条结算记录吗？此操作不可恢复！`,
+      type: 'danger',
+      onConfirm: () => {
+        selectedSettlementIds.forEach(id => {
+          deleteSettlementRecord(id);
+        });
+        loadSettlementRecords();
+        setSelectedSettlementIds([]);
+        setShowBatchDelete(false);
+        setConfirmDialog({ ...confirmDialog, isOpen: false });
+        showToast(`成功删除 ${selectedSettlementIds.length} 条记录`, 'success');
+        logOperation('批量删除', 'delete', '结算记录', `${selectedSettlementIds.length} 条记录`);
       },
     });
   };
