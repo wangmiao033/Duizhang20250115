@@ -8,19 +8,36 @@ interface TransactionListProps {
   transactions: Transaction[];
   onEdit: (transaction: Transaction) => void;
   onDelete: (id: string) => void;
-  searchTerm?: string;
-  filterType?: 'all' | 'income' | 'expense';
+  selectedIds?: string[];
+  onSelect?: (id: string) => void;
+  onSelectAll?: () => void;
+  sortBy?: 'date' | 'amount' | 'category';
+  sortOrder?: 'asc' | 'desc';
 }
 
 export default function TransactionList({
   transactions,
   onEdit,
   onDelete,
+  selectedIds = [],
+  onSelect,
+  onSelectAll,
+  sortBy = 'date',
+  sortOrder = 'desc',
 }: TransactionListProps) {
-  const filteredTransactions = transactions
-    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  const sortedTransactions = [...transactions].sort((a, b) => {
+    let comparison = 0;
+    if (sortBy === 'date') {
+      comparison = new Date(a.date).getTime() - new Date(b.date).getTime();
+    } else if (sortBy === 'amount') {
+      comparison = a.amount - b.amount;
+    } else if (sortBy === 'category') {
+      comparison = a.category.localeCompare(b.category);
+    }
+    return sortOrder === 'asc' ? comparison : -comparison;
+  });
 
-  if (filteredTransactions.length === 0) {
+  if (sortedTransactions.length === 0) {
     return (
       <div className="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-lg text-center text-gray-500 dark:text-gray-400">
         暂无对账记录
@@ -34,6 +51,16 @@ export default function TransactionList({
         <table className="w-full">
           <thead className="bg-gray-50 dark:bg-gray-700">
             <tr>
+              {onSelect && (
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                  <input
+                    type="checkbox"
+                    checked={selectedIds.length === sortedTransactions.length && sortedTransactions.length > 0}
+                    onChange={onSelectAll}
+                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                </th>
+              )}
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                 日期
               </th>
@@ -55,8 +82,23 @@ export default function TransactionList({
             </tr>
           </thead>
           <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-            {filteredTransactions.map((transaction) => (
-              <tr key={transaction.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+            {sortedTransactions.map((transaction) => (
+              <tr
+                key={transaction.id}
+                className={`hover:bg-gray-50 dark:hover:bg-gray-700 ${
+                  selectedIds.includes(transaction.id) ? 'bg-blue-50 dark:bg-blue-900/20' : ''
+                }`}
+              >
+                {onSelect && (
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.includes(transaction.id)}
+                      onChange={() => onSelect(transaction.id)}
+                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                  </td>
+                )}
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
                   {format(new Date(transaction.date), 'yyyy-MM-dd')}
                 </td>

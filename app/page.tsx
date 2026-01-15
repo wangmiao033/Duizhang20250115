@@ -18,6 +18,7 @@ import {
   calculateMonthlySummary,
   filterByDateRange,
   exportToCSV,
+  exportToExcel,
 } from '@/lib/utils';
 import TransactionForm from '@/components/TransactionForm';
 import TransactionList from '@/components/TransactionList';
@@ -25,7 +26,13 @@ import SummaryCard from '@/components/SummaryCard';
 import DateRangeFilter from '@/components/DateRangeFilter';
 import CategoryChart from '@/components/CategoryChart';
 import MonthlyStats from '@/components/MonthlyStats';
+import YearlyStats from '@/components/YearlyStats';
 import DataImport from '@/components/DataImport';
+import QuickAdd from '@/components/QuickAdd';
+import BatchActions from '@/components/BatchActions';
+import AdvancedStats from '@/components/AdvancedStats';
+import Toast from '@/components/Toast';
+import ConfirmDialog from '@/components/ConfirmDialog';
 
 export default function Home() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -41,8 +48,24 @@ export default function Home() {
   const [filterType, setFilterType] = useState<'all' | 'income' | 'expense'>('all');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
-  const [activeTab, setActiveTab] = useState<'list' | 'stats' | 'monthly'>('list');
+  const [activeTab, setActiveTab] = useState<'list' | 'stats' | 'monthly' | 'yearly' | 'advanced'>('list');
   const [categoryType, setCategoryType] = useState<'all' | 'income' | 'expense'>('all');
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [sortBy, setSortBy] = useState<'date' | 'amount' | 'category'>('date');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
+  const [confirmDialog, setConfirmDialog] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+    type?: 'danger' | 'warning' | 'info';
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: () => {},
+  });
 
   useEffect(() => {
     loadTransactions();
@@ -82,12 +105,20 @@ export default function Home() {
   const handleSubmit = (transaction: Transaction) => {
     if (editingTransaction) {
       updateTransaction(transaction.id, transaction);
+      showToast('记录更新成功', 'success');
     } else {
       saveTransaction(transaction);
+      showToast('记录添加成功', 'success');
     }
     loadTransactions();
     setShowForm(false);
     setEditingTransaction(null);
+  };
+
+  const handleQuickAdd = (transaction: Transaction) => {
+    saveTransaction(transaction);
+    loadTransactions();
+    showToast('快捷添加成功', 'success');
   };
 
   const handleEdit = (transaction: Transaction) => {
@@ -96,25 +127,88 @@ export default function Home() {
   };
 
   const handleDelete = (id: string) => {
-    deleteTransaction(id);
-    loadTransactions();
+    setConfirmDialog({
+      isOpen: true,
+      title: '确认删除',
+      message: '确定要删除这条记录吗？',
+      type: 'danger',
+      onConfirm: () => {
+        deleteTransaction(id);
+        loadTransactions();
+        setSelectedIds(prev => prev.filter(selectedId => selectedId !== id));
+        setConfirmDialog({ ...confirmDialog, isOpen: false });
+        showToast('删除成功', 'success');
+      },
+    });
+  };
+
+  const handleBatchDelete = () => {
+    if (selectedIds.length === 0) return;
+    setConfirmDialog({
+      isOpen: true,
+      title: '批量删除',
+      message: `确定要删除选中的 ${selectedIds.length} 条记录吗？此操作不可恢复！`,
+      type: 'danger',
+      onConfirm: () => {
+        selectedIds.forEach(id => deleteTransaction(id));
+        loadTransactions();
+        setSelectedIds([]);
+        setConfirmDialog({ ...confirmDialog, isOpen: false });
+        showToast(`成功删除 ${selectedIds.length} 条记录`, 'success');
+      },
+    });
+  };
+
+  const handleSelect = (id: string) => {
+    setSelectedIds(prev =>
+      prev.includes(id) ? prev.filter(selectedId => selectedId !== id) : [...prev, id]
+    );
+  };
+
+  const handleSelectAll = () => {
+    const currentTransactions = filteredTransactions.length > 0 ? filteredTransactions : transactions;
+    if (selectedIds.length === currentTransactions.length) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(currentTransactions.map(t => t.id));
+    }
+  };
+
+  const showToast = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3000);
   };
 
   const handleExport = () => {
     exportToCSV(filteredTransactions.length > 0 ? filteredTransactions : transactions);
+    showToast('CSV 导出成功', 'success');
+  };
+
+  const handleExportExcel = () => {
+    exportToExcel(filteredTransactions.length > 0 ? filteredTransactions : transactions);
+    showToast('Excel 导出成功', 'success');
   };
 
   const handleClearAll = () => {
-    if (confirm('确定要清空所有数据吗？此操作不可恢复！')) {
-      clearAllTransactions();
-      loadTransactions();
-    }
+    setConfirmDialog({
+      isOpen: true,
+      title: '清空所有数据',
+      message: '确定要清空所有数据吗？此操作不可恢复！',
+      type: 'danger',
+      onConfirm: () => {
+        clearAllTransactions();
+        loadTransactions();
+        setSelectedIds([]);
+        setConfirmDialog({ ...confirmDialog, isOpen: false });
+        showToast('数据已清空', 'success');
+      },
+    });
   };
 
   const handleImport = (importedTransactions: Transaction[]) => {
     importTransactions(importedTransactions);
     loadTransactions();
-    alert(`成功导入 ${importedTransactions.length} 条记录`);
+    showToast(`成功导入 ${importedTransactions.length} 条记录`, 'success');
   };
 
   const handleExportJSON = () => {
@@ -143,9 +237,9 @@ export default function Home() {
             const json = event.target?.result as string;
             importFromJSON(json);
             loadTransactions();
-            alert('数据恢复成功！');
+            showToast('数据恢复成功！', 'success');
           } catch (error) {
-            alert('导入失败：' + (error instanceof Error ? error.message : '未知错误'));
+            showToast('导入失败：' + (error instanceof Error ? error.message : '未知错误'), 'error');
           }
         };
         reader.readAsText(file);
@@ -199,6 +293,7 @@ export default function Home() {
             >
               + 新增记录
             </button>
+            <QuickAdd onAdd={handleQuickAdd} />
             <DataImport onImport={handleImport} />
             <button
               onClick={handleExport}
@@ -206,6 +301,13 @@ export default function Home() {
               disabled={transactions.length === 0}
             >
               导出 CSV
+            </button>
+            <button
+              onClick={handleExportExcel}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2 px-6 rounded-md transition-colors shadow-md"
+              disabled={transactions.length === 0}
+            >
+              导出 Excel
             </button>
             <button
               onClick={handleExportJSON}
@@ -258,10 +360,10 @@ export default function Home() {
         </div>
 
         <div className="mb-6 border-b border-gray-200 dark:border-gray-700 no-print">
-          <nav className="flex space-x-8">
+          <nav className="flex space-x-8 overflow-x-auto">
             <button
               onClick={() => setActiveTab('list')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm ${
+              className={`py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
                 activeTab === 'list'
                   ? 'border-blue-500 text-blue-600 dark:text-blue-400'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
@@ -271,7 +373,7 @@ export default function Home() {
             </button>
             <button
               onClick={() => setActiveTab('stats')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm ${
+              className={`py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
                 activeTab === 'stats'
                   ? 'border-blue-500 text-blue-600 dark:text-blue-400'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
@@ -281,13 +383,33 @@ export default function Home() {
             </button>
             <button
               onClick={() => setActiveTab('monthly')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm ${
+              className={`py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
                 activeTab === 'monthly'
                   ? 'border-blue-500 text-blue-600 dark:text-blue-400'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
               }`}
             >
               月度统计
+            </button>
+            <button
+              onClick={() => setActiveTab('yearly')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
+                activeTab === 'yearly'
+                  ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
+              }`}
+            >
+              年度统计
+            </button>
+            <button
+              onClick={() => setActiveTab('advanced')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
+                activeTab === 'advanced'
+                  ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
+              }`}
+            >
+              详细统计
             </button>
           </nav>
         </div>
@@ -306,11 +428,44 @@ export default function Home() {
         )}
 
         {activeTab === 'list' && (
-          <TransactionList
-            transactions={filteredTransactions}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-          />
+          <div className="space-y-4">
+            <BatchActions
+              selectedIds={selectedIds}
+              onSelectAll={handleSelectAll}
+              onDeselectAll={() => setSelectedIds([])}
+              onDeleteSelected={handleBatchDelete}
+              totalCount={filteredTransactions.length}
+            />
+            <div className="flex gap-4 mb-4 no-print">
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as 'date' | 'amount' | 'category')}
+                className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+              >
+                <option value="date">按日期</option>
+                <option value="amount">按金额</option>
+                <option value="category">按类别</option>
+              </select>
+              <select
+                value={sortOrder}
+                onChange={(e) => setSortOrder(e.target.value as 'asc' | 'desc')}
+                className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+              >
+                <option value="desc">降序</option>
+                <option value="asc">升序</option>
+              </select>
+            </div>
+            <TransactionList
+              transactions={filteredTransactions}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+              selectedIds={selectedIds}
+              onSelect={handleSelect}
+              onSelectAll={handleSelectAll}
+              sortBy={sortBy}
+              sortOrder={sortOrder}
+            />
+          </div>
         )}
 
         {activeTab === 'stats' && (
@@ -333,7 +488,32 @@ export default function Home() {
         {activeTab === 'monthly' && (
           <MonthlyStats monthlyData={monthlyData} />
         )}
+
+        {activeTab === 'yearly' && (
+          <YearlyStats transactions={filteredTransactions.length > 0 ? filteredTransactions : transactions} />
+        )}
+
+        {activeTab === 'advanced' && (
+          <AdvancedStats transactions={filteredTransactions.length > 0 ? filteredTransactions : transactions} />
+        )}
       </div>
+
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
+
+      <ConfirmDialog
+        isOpen={confirmDialog.isOpen}
+        title={confirmDialog.title}
+        message={confirmDialog.message}
+        onConfirm={confirmDialog.onConfirm}
+        onCancel={() => setConfirmDialog({ ...confirmDialog, isOpen: false })}
+        type={confirmDialog.type}
+      />
     </div>
   );
 }
