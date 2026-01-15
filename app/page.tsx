@@ -474,59 +474,6 @@ export default function Home() {
   const incomeCount = transactions.filter(t => t.type === 'income').length;
   const expenseCount = transactions.filter(t => t.type === 'expense').length;
 
-  // 快捷键支持 - 使用简单的 useEffect 实现
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // 只在结算页面生效
-      if (activeTab !== 'settlement') return;
-
-      // Ctrl+N: 新建记录
-      if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
-        e.preventDefault();
-        if (!showSettlementForm) {
-          setEditingSettlement(null);
-          setShowSettlementForm(true);
-        }
-      }
-      // Ctrl+E: 导出Excel
-      if ((e.ctrlKey || e.metaKey) && e.key === 'e') {
-        e.preventDefault();
-        if (settlementRecords.length > 0) {
-          // 直接调用导出函数，避免依赖问题
-          exportSettlementToExcel(settlementRecords, settlementConfig);
-          showToast('Excel 对账单导出成功', 'success');
-          logOperation('导出Excel', 'export', '结算对账单', `${settlementRecords.length} 条记录`);
-        }
-      }
-      // Ctrl+P: 打印
-      if ((e.ctrlKey || e.metaKey) && e.key === 'p') {
-        if (showSettlementBill) {
-          // 让浏览器默认打印行为执行
-          return;
-        }
-      }
-      // Escape: 关闭弹窗
-      if (e.key === 'Escape') {
-        if (showSettlementForm) {
-          setShowSettlementForm(false);
-          setEditingSettlement(null);
-        }
-        if (showSettlementConfig) {
-          setShowSettlementConfig(false);
-        }
-        if (showBatchEdit) {
-          setShowBatchEdit(false);
-          setSelectedSettlementIds([]);
-        }
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [activeTab, showSettlementForm, showSettlementBill, showSettlementConfig, showBatchEdit, settlementRecords, settlementConfig]);
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
       {/* 顶部导航栏 */}
