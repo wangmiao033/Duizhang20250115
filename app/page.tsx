@@ -121,39 +121,6 @@ export default function Home() {
     loadSettlementRecords();
   }, []);
 
-  // 快捷键支持
-  useKeyboardShortcuts({
-    'ctrl+n': () => {
-      if (activeTab === 'settlement' && !showSettlementForm) {
-        setEditingSettlement(null);
-        setShowSettlementForm(true);
-      }
-    },
-    'ctrl+e': () => {
-      if (activeTab === 'settlement' && settlementRecords.length > 0) {
-        handleExportSettlementExcel();
-      }
-    },
-    'ctrl+p': () => {
-      if (activeTab === 'settlement' && showSettlementBill) {
-        window.print();
-      }
-    },
-    'escape': () => {
-      if (showSettlementForm) {
-        setShowSettlementForm(false);
-        setEditingSettlement(null);
-      }
-      if (showSettlementConfig) {
-        setShowSettlementConfig(false);
-      }
-      if (showBatchEdit) {
-        setShowBatchEdit(false);
-        setSelectedSettlementIds([]);
-      }
-    },
-  });
-
   useEffect(() => {
     applyFilters();
   }, [transactions, searchTerm, filterType, startDate, endDate]);
