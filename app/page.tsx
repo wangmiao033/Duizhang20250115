@@ -492,7 +492,10 @@ export default function Home() {
       if ((e.ctrlKey || e.metaKey) && e.key === 'e') {
         e.preventDefault();
         if (settlementRecords.length > 0) {
-          handleExportSettlementExcel();
+          // 直接调用导出函数，避免依赖问题
+          exportSettlementToExcel(settlementRecords, settlementConfig);
+          showToast('Excel 对账单导出成功', 'success');
+          logOperation('导出Excel', 'export', '结算对账单', `${settlementRecords.length} 条记录`);
         }
       }
       // Ctrl+P: 打印
@@ -522,7 +525,7 @@ export default function Home() {
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [activeTab, showSettlementForm, showSettlementBill, showSettlementConfig, showBatchEdit, settlementRecords.length]);
+  }, [activeTab, showSettlementForm, showSettlementBill, showSettlementConfig, showBatchEdit, settlementRecords, settlementConfig]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
