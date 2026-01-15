@@ -398,6 +398,12 @@ export default function Home() {
     logOperation('导出CSV', 'export', '结算对账单', `${settlementRecords.length} 条记录`);
   };
 
+  const handleExportSettlementPDF = () => {
+    exportSettlementToPDF(settlementRecords, settlementConfig);
+    showToast('PDF 导出已打开打印窗口', 'info');
+    logOperation('导出PDF', 'export', '结算对账单', `${settlementRecords.length} 条记录`);
+  };
+
   const handleSettlementSortChange = (field: SortField, order: SortOrder) => {
     setSettlementSortField(field);
     setSettlementSortOrder(order);
